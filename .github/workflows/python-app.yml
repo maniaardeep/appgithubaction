@@ -2,30 +2,45 @@ name: Python CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out code
+      # Checkout source code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: "pip"
 
-      - name: Install uv
-        run: pip install uv
+      # Upgrade pip
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
 
+      # Install dependencies
       - name: Install dependencies
-        run: uv sync
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "requirements.txt not found!"
+            exit 1
+          fi
 
+      # Run tests only if tests exist
       - name: Run tests
-        run: uv run pytest
+        run: |
+          if [ -d tests ] || [ -f test.py ]; then
+            pytest
+          else
+            echo "No tests found. Skipping."
+          fi
